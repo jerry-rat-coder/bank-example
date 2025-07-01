@@ -6,15 +6,15 @@ export async function POST(request) {
         // 检查身份验证
         const authToken = request.cookies.get('auth_token')
 
-        if (!authToken) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: '请先登录',
-                },
-                { status: 401 },
-            )
-        }
+        // if (!authToken) {
+        //     return NextResponse.json(
+        //         {
+        //             success: false,
+        //             message: '请先登录',
+        //         },
+        //         { status: 401 },
+        //     )
+        // }
 
         const username = authToken.value
             .replace('user_', '')

@@ -18,7 +18,6 @@ export async function POST(request) {
                 httpOnly: false, // 故意设为false，演示漏洞
                 maxAge: 3600, // 1小时
                 path: '/',
-                // 不设置sameSite，让浏览器使用默认行为lax
                 sameSite: 'none',
                 secure: true,
             })
