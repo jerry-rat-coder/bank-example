@@ -5,11 +5,7 @@ export async function GET(request) {
     try {
         const authToken = request.cookies.get('auth_token')
 
-        if (
-            !authToken ||
-            !authToken.value.includes('user_') ||
-            !authToken.value.includes('_token')
-        ) {
+        if (!authToken) {
             return NextResponse.json(
                 {
                     success: false,
