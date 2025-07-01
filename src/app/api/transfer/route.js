@@ -4,19 +4,17 @@ import { getAccount, updateBalance, checkBalance } from '../../lib/data.js'
 export async function POST(request) {
     try {
         // 检查身份验证
-        const authToken = {
-            value: 'user_admin_token',
-        }
+        const authToken = request.cookies.get('auth_token')
 
-        // if (!authToken) {
-        //     return NextResponse.json(
-        //         {
-        //             success: false,
-        //             message: '请先登录',
-        //         },
-        //         { status: 401 },
-        //     )
-        // }
+        if (!authToken) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: '请先登录',
+                },
+                { status: 401 },
+            )
+        }
 
         const username = authToken.value
             .replace('user_', '')
