@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [message, setMessage] = useState('')
     const [account, setAccount] = useState(null)
     const router = useRouter()
+    const [loginForm, setLoginForm] = useState({
+        username: '',
+        password: '',
+        sameSiteMode: '',
+    })
+    const [loading, setLoading] = useState(false)
 
     // 获取账户信息
     const fetchAccountInfo = async () => {
@@ -27,42 +31,57 @@ export default function HomePage() {
     }
 
     useEffect(() => {
-        // 检查是否已登录
-        fetch('/api/auth/check', {
-            credentials: 'include',
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.success) {
-                    setIsLoggedIn(true)
-                    setUsername(data.user.username)
-                    fetchAccountInfo()
-                }
+        checkAuth()
+        if (isLoggedIn) {
+            fetchAccountInfo()
+        }
+    }, [isLoggedIn])
+
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/auth/check', {
+                credentials: 'include',
             })
-            .catch(() => {})
-    }, [])
+            const data = await response.json()
+            if (data.success) {
+                setIsLoggedIn(true)
+                setAccount(data.account)
+            }
+        } catch (error) {
+            console.error('检查认证状态失败:', error)
+        }
+    }
 
     const handleLogin = async (e) => {
         e.preventDefault()
+        setLoading(true)
 
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ username, password }),
-        })
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(loginForm),
+            })
 
-        const data = await response.json()
+            const data = await response.json()
 
-        if (data.success) {
-            setIsLoggedIn(true)
-            setMessage('登录成功！')
-            fetchAccountInfo()
-        } else {
-            setMessage('登录失败：' + data.message)
+            if (data.success) {
+                setIsLoggedIn(true)
+                setMessage('登录成功！')
+                setAccount(data.account)
+                setLoginForm({ username: '', password: '', sameSiteMode: '' })
+            } else {
+                setMessage('登录失败：' + data.message)
+            }
+        } catch (error) {
+            console.error('登录失败:', error)
+            setMessage('登录失败')
         }
+
+        setLoading(false)
     }
 
     const handleLogout = async () => {
@@ -105,7 +124,8 @@ export default function HomePage() {
                                         用户名：
                                     </span>
                                     <span className="font-semibold">
-                                        {account?.username || username}
+                                        {account?.username ||
+                                            loginForm.username}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -205,8 +225,13 @@ export default function HomePage() {
                         </label>
                         <input
                             type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            value={loginForm.username}
+                            onChange={(e) =>
+                                setLoginForm({
+                                    ...loginForm,
+                                    username: e.target.value,
+                                })
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                             placeholder="请输入用户名"
                             required
@@ -219,19 +244,50 @@ export default function HomePage() {
                         </label>
                         <input
                             type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            value={loginForm.password}
+                            onChange={(e) =>
+                                setLoginForm({
+                                    ...loginForm,
+                                    password: e.target.value,
+                                })
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                             placeholder="请输入密码"
                             required
                         />
                     </div>
 
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                            Cookie SameSite 设置
+                        </label>
+                        <select
+                            value={loginForm.sameSiteMode}
+                            onChange={(e) =>
+                                setLoginForm({
+                                    ...loginForm,
+                                    sameSiteMode: e.target.value,
+                                })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
+                        >
+                            <option value="">默认 (无SameSite)</option>
+                            <option value="strict">
+                                Strict (严格禁止跨站)
+                            </option>
+                            <option value="lax">
+                                Lax (链接可以，表单POST不行)
+                            </option>
+                            <option value="none">None (允许跨站)</option>
+                        </select>
+                    </div>
+
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        disabled={loading}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
                     >
-                        登录
+                        {loading ? '登录中...' : '登录'}
                     </button>
                 </form>
 

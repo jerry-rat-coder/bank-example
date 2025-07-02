@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request) {
     try {
-        const { username, password } = await request.json()
+        const { username, password, sameSiteMode } = await request.json()
 
         // 简单的验证逻辑：用户名和密码相同即可登录
         if (username && password && username === password) {
@@ -13,14 +13,27 @@ export async function POST(request) {
                 user: { username },
             })
 
-            // 设置Cookie（故意设置为不安全，演示CSRF漏洞）
-            response.cookies.set('auth_token', `user_${username}_token`, {
-                httpOnly: false, // 故意设为false，演示漏洞
-                maxAge: 3600, // 1小时
+            let cookieOptions = {
+                httpOnly: false,
+                maxAge: 3600,
                 path: '/',
-                sameSite: 'none',
-                secure: true,
-            })
+                domain: 'localhost',
+            }
+
+            if (sameSiteMode === 'strict') {
+                cookieOptions.sameSite = 'strict'
+            } else if (sameSiteMode === 'lax') {
+                cookieOptions.sameSite = 'lax'
+            } else if (sameSiteMode === 'none') {
+                cookieOptions.sameSite = 'none'
+                cookieOptions.secure = true
+            }
+
+            response.cookies.set(
+                'auth_token',
+                `user_${username}_token_${sameSiteMode || 'default'}`,
+                cookieOptions,
+            )
 
             return response
         } else {

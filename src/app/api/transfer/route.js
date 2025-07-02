@@ -6,7 +6,11 @@ export async function POST(request) {
         // 检查身份验证
         const authToken = request.cookies.get('auth_token')
 
-        if (!authToken) {
+        if (
+            !authToken ||
+            !authToken.value.includes('user_') ||
+            !authToken.value.includes('_token')
+        ) {
             return NextResponse.json(
                 {
                     success: false,
