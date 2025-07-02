@@ -17,7 +17,6 @@ export async function POST(request) {
                 httpOnly: false,
                 maxAge: 3600,
                 path: '/',
-                domain: 'localhost',
             }
 
             if (sameSiteMode === 'strict') {
